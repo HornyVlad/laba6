@@ -3,6 +3,7 @@
 #include <time.h>
 #include <windows.h>
 #include <queue>
+#include <stack>
 using namespace std;
 
 struct Node
@@ -19,7 +20,7 @@ void InitializHead(int size)
 {
 	int i;
 	Head = (PNode*)malloc(size * sizeof(PNode));
-	for (i = 0; i < size; i++) Head[i] = NULL;
+	for (i = 0; i < size; i++) Head[i] = 0;
 }
 
 PNode CreateNode(int items)
@@ -105,9 +106,51 @@ void BFS2(int* dist, int** a, int size, int num)
 	}
 }
 
+void DFS(int** a, int* dist, int size, int num) {
+	stack <int> s;
+	int i;
+
+	s.push(num);
+	dist[num] = 0;
+	while (!s.empty())
+	{
+		num = s.top();
+		s.pop();
+		for (i = 0; i < size; i++)
+		{
+			if ((a[num][i] == 1) && (dist[i] == -1))
+			{
+				s.push(i);
+				dist[i] = dist[num] + 1;
+			}
+		}
+	}
+}
+
+void DFS2(int** a, int* dist, int num, int size)
+{
+	std::stack <int> s;
+	s.push(num);
+	dist[num] = 0;
+	while (!s.empty())
+	{
+		num = s.top();
+		s.pop();
+		while (Head[num])
+		{
+			if (dist[Head[num]->items] == -1)
+			{
+				s.push(Head[num]->items);
+				dist[Head[num]->items] = dist[num] + 1;
+			}
+			Head[num] = Head[num]->next;
+		}
+	}
+}
+
 int main()
 {
-	int i, j, size, ** a, *dist, ran, num;
+	int i, j, size, ** a, *dist, ran, num, type, *parent;
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 	setvbuf(stdin, NULL, _IONBF, 0);
@@ -117,8 +160,11 @@ int main()
 	scanf_s("%d", &size);
 	printf("Введите начальную строку ");
 	scanf_s("%d", &num);
+	printf("Выберите тип обхода\n1-В ширину\n2-В глубину\n ");
+	scanf_s("%d", &type);
 	printf("Матрица смежности:\n");
 	a = (int**)malloc(size * sizeof(int));
+	parent = (int*)malloc(size * sizeof(int));
 	dist = (int*)malloc(size * sizeof(int));
 	srand(time(NULL));
 	for (i = 0; i < size; i++)
@@ -160,39 +206,81 @@ int main()
 		}
 		printf("\n");
 	}
-	printf("\nОчерёдность посещения вершин: "); 
-	BFS(dist, a, size, num);
-	printf("\nРасстояния до вершин: ");
-	for (i = 0; i < size; i++)
+	switch (type)
 	{
-		printf("%d ", dist[i]);
-	}
-	InitializHead(size);
-	for (i = 0; i < size; i++)
+	case 1:
 	{
-		NewNode = CreateNode(i);
-		AddFirst(NewNode, i);
-	}
-	for (i = 0; i < size; i++)
-	{
-		for (j = 0; j < size; j++)
+		printf("\nОчерёдность посещения вершин: ");
+		BFS(dist, a, size, num);
+		printf("\nРасстояния до вершин: ");
+		for (i = 0; i < size; i++)
 		{
-			if (a[i][j] == 1)
+			printf("%d ", dist[i]);
+		}
+		InitializHead(size);
+		for (i = 0; i < size; i++)
+		{
+			NewNode = CreateNode(i);
+			AddFirst(NewNode, i);
+		}
+		for (i = 0; i < size; i++)
+		{
+			for (j = 0; j < size; j++)
 			{
-				NewNode = CreateNode(j);
-				AddLast(NewNode, i);
+				if (a[i][j] == 1)
+				{
+					NewNode = CreateNode(j);
+					AddLast(NewNode, i);
+				}
 			}
 		}
+		for (i = 0; i < size; i++)
+		{
+			dist[i] = -1;
+		}
+		printf("\nОчерёдность посещения вершин: ");
+		BFS2(dist, a, size, num);
+		printf("\nРасстояния до вершин: ");
+		for (i = 0; i < size; i++)
+		{
+			printf("%d ", dist[i]);
+		}
+		break;
 	}
-	for (i = 0; i < size; i++)
+	case 2:
 	{
-		dist[i] = -1;
+		printf("\nРасстояние пройденное до каждой вершины:\n");
+		dist[num] = 0;
+		DFS(a, dist, size, num);
+		for (i = 0; i < size; i++)
+		{
+			printf("Вершина %d - %d\n", i, dist[i]);
+		}
+		for (i = 0; i < size; i++)
+		{
+			dist[i] = -1;
+		}
+		InitializHead(size);
+		for (i = 0; i < size; i++) {
+			NewNode = CreateNode(i);
+			AddFirst(NewNode, i);
+		}
+		for (i = 0; i < size; i++) {
+			for (j = 0; j < size; j++) {
+				if (a[i][j] == 1) {
+					NewNode = CreateNode(j);
+					AddLast(NewNode, i);
+				}
+			}
+		}
+		printf("\n\nРасстояние и обход для глубины представленной списками\n");
+		printf("Расстояние пройденное до каждой вершины:\n");
+		DFS2(a, dist, num, size);
+		for (i = 0; i < size; i++)
+		{
+			printf("Вершина %d - %d\n", i, dist[i]);
+		}
+		break;
 	}
-	printf("\nОчерёдность посещения вершин: ");
-	BFS2(dist, a, size, num);
-	printf("\nРасстояния до вершин: ");
-	for (i = 0; i < size; i++)
-	{
-		printf("%d ", dist[i]);
 	}
 }
